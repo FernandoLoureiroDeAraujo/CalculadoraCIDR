@@ -22,8 +22,6 @@ import android.widget.ExpandableListView;
 import android.widget.Spinner;
 import android.widget.TextView;
 
-import org.apache.commons.net.util.SubnetUtils;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -31,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 import br.com.loureiro.misc.SimpleLog;
+import br.com.loureiro.misc.SubnetUtils;
 
 public class MainActivity extends AppCompatActivity {
 
