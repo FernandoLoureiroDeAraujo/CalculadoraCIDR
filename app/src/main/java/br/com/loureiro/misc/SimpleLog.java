@@ -7,7 +7,6 @@ import android.view.View;
 /**
  * Created by fernando on 31/07/17.
  */
-
 public class SimpleLog {
 
     private static final String INFO = "INFO";

@@ -29,8 +29,11 @@ import java.util.List;
 import java.util.Map;
 
 import br.com.loureiro.misc.SimpleLog;
-import br.com.loureiro.misc.SubnetUtils;
+import br.com.loureiro.misc.CalculateIP;
 
+/**
+ * Created by fernando on 08/10/17.
+ */
 public class MainActivity extends AppCompatActivity {
 
     /* CONSTANTES */
@@ -49,16 +52,16 @@ public class MainActivity extends AppCompatActivity {
     private EditText mIP_3;
     private EditText mIP_4;
 
-    private Spinner mPrefixo;
+    private Spinner mPrefix;
 
-    private Button mLimpar;
-    private Button mCalcular;
+    private Button mClean;
+    private Button mCalculate;
 
-    private TextView mEndereco;
-    private TextView mMascara;
+    private TextView mAddress;
+    private TextView mMask;
     private TextView mBroadcast;
-    private TextView mAlcance;
-    private TextView mQuantidadeIPs;
+    private TextView mRange;
+    private TextView mAmountIPs;
 
     private ExpandableListView mExpandableListView;
     private ExpandableListAdapter mExpandableListAdapter;
@@ -76,14 +79,14 @@ public class MainActivity extends AppCompatActivity {
             super.onCreate(savedInstanceState);
             setContentView(R.layout.activity_main);
 
-            alterarCorStatusBar();
+            changeStatusBarColor();
             getViewObjects();
 
             editTextChangedListeners();
 
             adicionarPrefixo();
-            botaoCalcular();
-            botaoLimpar();
+            calculateButton();
+            cleanButton();
         } catch (Exception e) {
             SimpleLog.showMessage(getWindow().getDecorView(), "Erro inesperado");
             SimpleLog.error("ERROR", e);
@@ -100,16 +103,16 @@ public class MainActivity extends AppCompatActivity {
 
         mIP_4.setTag("TAG-IP4");
 
-        mPrefixo = (Spinner) findViewById(R.id.vPrefixo);
+        mPrefix = (Spinner) findViewById(R.id.vPrefixo);
 
-        mCalcular = (Button) findViewById(R.id.vCalcularBotao);
-        mLimpar = (Button) findViewById(R.id.vLimparBotao);
+        mCalculate = (Button) findViewById(R.id.vCalcularBotao);
+        mClean = (Button) findViewById(R.id.vLimparBotao);
 
-        mEndereco = (TextView) findViewById(R.id.vEnderecoRedeValor);
-        mMascara = (TextView) findViewById(R.id.vMascaraRedeValor);
+        mAddress = (TextView) findViewById(R.id.vEnderecoRedeValor);
+        mMask = (TextView) findViewById(R.id.vMascaraRedeValor);
         mBroadcast = (TextView) findViewById(R.id.vEnderecoBroadcastValor);
-        mAlcance = (TextView) findViewById(R.id.vAlcanceValor);
-        mQuantidadeIPs = (TextView) findViewById(R.id.vQuantidadeValor);
+        mRange = (TextView) findViewById(R.id.vAlcanceValor);
+        mAmountIPs = (TextView) findViewById(R.id.vQuantidadeValor);
 
         mExpandableListView = (ExpandableListView) findViewById(R.id.expandableListView);
     }
@@ -128,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
         ArrayAdapter<Integer> dataAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, mPrefixoList);
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
-        mPrefixo.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        mPrefix.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 prefixo = String.valueOf(adapterView.getSelectedItem());
@@ -137,43 +140,43 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onNothingSelected(AdapterView<?> adapterView) {}
         });
-        mPrefixo.setAdapter(dataAdapter);
+        mPrefix.setAdapter(dataAdapter);
     }
 
-    private void botaoCalcular() {
-        mCalcular.setOnClickListener(new View.OnClickListener() {
+    private void calculateButton() {
+        mCalculate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 hideKeyboardAndClearFocus();
 
                 getIP();
-                SubnetUtils.SubnetInfo subnetInfo = calcularCIDR();
+                CalculateIP.Calculate calculate = calculateCIDR();
 
-                if(subnetInfo != null) {
-                    adicionarResultado(subnetInfo);
+                if(calculate != null) {
+                    addResult(calculate);
                 }
             }
         });
     }
 
-    private SubnetUtils.SubnetInfo calcularCIDR() {
+    private CalculateIP.Calculate calculateCIDR() {
         try {
-            SubnetUtils cidr = new SubnetUtils(new StringBuilder().append(IP).append("/").append(prefixo).toString());
-            SubnetUtils.SubnetInfo subnetInfo = cidr.getInfo();
-            return subnetInfo;
+            CalculateIP cidr = new CalculateIP(new StringBuilder().append(IP).append("/").append(prefixo).toString());
+            CalculateIP.Calculate calculate = cidr.getInfo();
+            return calculate;
         } catch (Exception e) {
             SimpleLog.showMessage(getWindow().getDecorView(), "IP inválido");
             return null;
         }
     }
 
-    private Map<String, List<String>> listarIPsCalculados(SubnetUtils.SubnetInfo subnetInfo) {
+    private Map<String, List<String>> listIPS(CalculateIP.Calculate calculate) {
         Map<String, List<String>> map = new LinkedHashMap<>();
 
         List<String> ips = new ArrayList<>();
 
-        for (int i = 0; i < subnetInfo.getAllAddresses().length; i++) {
-            String currentIP = subnetInfo.getAllAddresses()[i];
+        for (int i = 0; i < calculate.getAllAddresses().length; i++) {
+            String currentIP = calculate.getAllAddresses()[i];
 
             ips.add(currentIP);
 
@@ -182,13 +185,13 @@ public class MainActivity extends AppCompatActivity {
                 break;
             }
 
-            if(LAST_DIGIT_IP.equals(getLastDigitIP(subnetInfo.getAllAddresses()[i]))) {
+            if(LAST_DIGIT_IP.equals(getLastDigitIP(calculate.getAllAddresses()[i]))) {
                 setIpRange(currentIP, ips, map);
                 ips = new ArrayList<>();
                 continue;
             }
 
-            if(i == subnetInfo.getAllAddresses().length - 1) {
+            if(i == calculate.getAllAddresses().length - 1) {
                 setIpRange(currentIP, ips, map);
                 ips = new ArrayList<>();
             }
@@ -210,23 +213,23 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void adicionarResultado(SubnetUtils.SubnetInfo subnetInfo) {
-        mEndereco.setText(subnetInfo.getNetworkAddress());
-        mMascara.setText(subnetInfo.getNetmask());
-        mBroadcast.setText(subnetInfo.getBroadcastAddress());
-        mAlcance.setText(new StringBuilder().append(subnetInfo.getLowAddress()).append(" - ").append(subnetInfo.getHighAddress()));
-        mQuantidadeIPs.setText(String.valueOf(subnetInfo.getAddressCountLong()));
+    private void addResult(CalculateIP.Calculate calculate) {
+        mAddress.setText(calculate.getNetworkAddress());
+        mMask.setText(calculate.getNetmask());
+        mBroadcast.setText(calculate.getBroadcastAddress());
+        mRange.setText(new StringBuilder().append(calculate.getLowAddress()).append(" - ").append(calculate.getHighAddress()));
+        mAmountIPs.setText(String.valueOf(calculate.getAddressCountLong()));
 
         mExpandableListView.setAdapter((BaseExpandableListAdapter)null);
 
         cardView.setVisibility(View.VISIBLE);
 
-        ListarIPsCalculadosAsync async = new ListarIPsCalculadosAsync();
-        async.execute(subnetInfo);
+        ListIPsAsync async = new ListIPsAsync();
+        async.execute(calculate);
     }
 
-    private void botaoLimpar() {
-        mLimpar.setOnClickListener(new View.OnClickListener() {
+    private void cleanButton() {
+        mClean.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 cancelAsync = true;
@@ -240,13 +243,13 @@ public class MainActivity extends AppCompatActivity {
 
                 hideKeyboardAndClearFocus();
 
-                mPrefixo.setSelection(0);
+                mPrefix.setSelection(0);
 
-                mEndereco.setText(null);
-                mMascara.setText(null);
+                mAddress.setText(null);
+                mMask.setText(null);
                 mBroadcast.setText(null);
-                mAlcance.setText(null);
-                mQuantidadeIPs.setText(null);
+                mRange.setText(null);
+                mAmountIPs.setText(null);
 
                 IP = null;
                 prefixo = null;
@@ -276,7 +279,7 @@ public class MainActivity extends AppCompatActivity {
             public void onTextChanged(CharSequence charSequence, int i, int i1, int count) {
                 if(currentEditText.getText().toString().length() == MIN_LENGTH) {
                     fowardEditText.requestFocus();
-                    mCalcular.setEnabled(false);
+                    mCalculate.setEnabled(false);
                     return;
                 }
 
@@ -287,7 +290,7 @@ public class MainActivity extends AppCompatActivity {
 
                 if("TAG-IP4".equals(currentEditText.getTag())) {
                     if(currentEditText.getText().toString().length() > MIN_LENGTH) {
-                        mCalcular.setEnabled(true);
+                        mCalculate.setEnabled(true);
                     }
                     return;
                 }
@@ -302,16 +305,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    public void alterarCorStatusBar() {
+    public void changeStatusBarColor() {
         getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.background));
     }
 
     private boolean cancelAsync;
 
-    private class ListarIPsCalculadosAsync extends AsyncTask<SubnetUtils.SubnetInfo, Void, Map<String, List<String>>> {
+    private class ListIPsAsync extends AsyncTask<CalculateIP.Calculate, Void, Map<String, List<String>>> {
         @Override
-        protected Map<String, List<String>> doInBackground(SubnetUtils.SubnetInfo... params) {
-            mMap = listarIPsCalculados(params[0]);
+        protected Map<String, List<String>> doInBackground(CalculateIP.Calculate... params) {
+            mMap = listIPS(params[0]);
             mExpandableListTitle = new ArrayList<>(mMap.keySet());
             return mMap;
         }

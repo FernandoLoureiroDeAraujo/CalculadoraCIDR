@@ -14,7 +14,6 @@ import java.util.Map;
 /**
  * Created by fernando on 08/10/17.
  */
-
 public class MainActivityExpandableListAdapter extends BaseExpandableListAdapter {
 
     private Context context;
