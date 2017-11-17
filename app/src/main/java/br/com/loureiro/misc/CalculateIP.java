@@ -149,13 +149,13 @@ public class CalculateIP {
                 netmask |= (1 << 31 - j);
             }
 
-            /* Calcula endereço de rede em binario */
+            /* Calcula endereço de rede em binário */
             network = (address & netmask);
 
-            /* Calcula endereço de broadcast em binario */
+            /* Calcula endereço de broadcast em binário */
             broadcast = network | ~(netmask);
         } else {
-            throw new IllegalArgumentException("Could not parse [" + mask + "]");
+            throw new IllegalArgumentException("Máscara incorreta [" + mask + "]");
         }
     }
 
@@ -164,13 +164,12 @@ public class CalculateIP {
         if (matcher.matches()) {
             return matchAddress(matcher);
         } else {
-            throw new IllegalArgumentException("Could not parse [" + address + "]");
+            throw new IllegalArgumentException("Endereço IP incorreto [" + address + "]");
         }
     }
 
     /*
-     * Convenience method to extract the components of a dotted decimal address and
-     * pack into an integer using a regex match
+     * Método realiza a conversão do endereço IP para inteiro em binário
      */
     private int matchAddress(Matcher matcher) {
         int addr = 0;
@@ -182,7 +181,7 @@ public class CalculateIP {
     }
 
     /*
-     * Convert a packed integer address into a 4-element array
+     * Converte inteiro binário para array de inteiro
      */
     private int[] toArray(int val) {
         int ret[] = new int[4];
@@ -193,7 +192,7 @@ public class CalculateIP {
     }
 
     /*
-     * Convert a 4-element array into dotted decimal format
+     * Formata array de inteiro para endereço de IP
      */
     private String format(int[] octets) {
         StringBuilder str = new StringBuilder();
@@ -207,17 +206,13 @@ public class CalculateIP {
     }
 
     private int rangeCheck(int value, int begin, int end) {
-        if (value >= begin && value <= end) { // (begin,end]
+        if (value >= begin && value <= end) {
             return value;
         }
 
         throw new IllegalArgumentException("Valor [" + value + "] está fora do tamanho máximo ["+begin+","+end+"]");
     }
 
-    /*
-     * Count the number of 1-bits in a 32-bit integer using a divide-and-conquer strategy
-     * see Hacker's Delight section 5.1
-     */
     int pop(int x) {
         x = x - ((x >>> 1) & 0x55555555);
         x = (x & 0x33333333) + ((x >>> 2) & 0x33333333);
@@ -227,10 +222,6 @@ public class CalculateIP {
         return x & 0x0000003F;
     }
 
-    /* Convert two dotted decimal addresses to a single xxx.xxx.xxx.xxx/yy format
-     * by counting the 1-bit population in the mask address. (It may be better to count
-     * NBITS-#trailing zeroes for this case)
-     */
     private String toCidrNotation(String addr, String mask) {
         return addr + "/" + pop(toInteger(mask));
     }
